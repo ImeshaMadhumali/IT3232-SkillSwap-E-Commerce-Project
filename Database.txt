@@ -1,0 +1,11 @@
+MariaDB [(none)]> use skillswapapi;
+Database changed
+MariaDB [skillswapapi]> show tables;
++------------------------+
+| Tables_in_skillswapapi |
++------------------------+
+| users                  |
++------------------------+
+1 row in set (0.001 sec)
+
+MariaDB [skillswapapi]>
