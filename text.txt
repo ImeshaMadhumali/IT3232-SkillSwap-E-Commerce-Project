@@ -1,0 +1,459 @@
+//config/SecurityConfig.java
+
+package config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	        http
+	            .csrf(csrf -> csrf.disable())
+	            .authorizeHttpRequests(auth -> auth
+	               .requestMatchers("/api/auth/**").permitAll()
+	                .anyRequest().authenticated()
+	            )
+	            .httpBasic(Customizer.withDefaults());
+
+	        return http.build();
+	    }
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+ }
+}
+
+//servic/AuthService.java
+
+package service;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import dto.LoginRequest;
+import dto.RegisterRequest;
+import model.User;
+import repository.UserRepository;
+
+public class AuthService {
+	@Autowired
+    private UserRepository userRepository;
+    @Autowired
+	private PasswordEncoder passwordEncoder;
+
+    public String register(RegisterRequest request) {
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isPresent()) {
+            return "Email already exists!";
+        }
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        userRepository.save(user);
+        return "Registration successful!";
+    }
+    public String login(LoginRequest request) {
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                return "Login successful!";
+            } else {
+                return "Incorrect password.";
+            }
+        } else {
+            return "User not found.";
+        }
+    }
+}
+
+
+//servic/UserService.java
+
+package service;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import dto.LoginRequest;
+import dto.RegisterRequest;
+import model.User;
+import repository.UserRepository;
+
+public class UserService {
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
+	 public String register(RegisterRequest request) {
+	        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+	        if (existingUser.isPresent()) {
+	            return "Email already exists!";
+	        }
+
+	        User user = new User();
+	        user.setUsername(request.getUsername());
+	        user.setEmail(request.getEmail());
+	        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+	        userRepository.save(user);
+	        return "Registration successful!";
+	    }
+
+	    public String login(LoginRequest request) {
+	        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
+	            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+	                return "Login successful!";
+	            } else {
+	                return "Incorrect password.";
+	            }
+	        } else {
+	            return "User not found.";
+	        }
+	    }
+}
+
+//controller/AuthController.java
+
+package controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import dto.LoginRequest;
+import dto.RegisterRequest;
+import service.AuthService;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+	@Autowired
+	private AuthService authService;
+	@PostMapping("/register")
+	public String register(@RequestBody RegisterRequest request) {
+		return authService.register(request);
+	}
+	@PostMapping("/login")
+	public String login(@RequestBody LoginRequest request) {
+		return authService.login(request);
+	}
+}
+
+//dto/AuthRequest.java
+
+package dto;
+
+public class AuthRequest {
+	private String email;
+	private String password;
+	
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+}
+
+//dto/AuthResponse.java
+
+package dto;
+
+import java.util.Map;
+
+public class AuthResponse {
+	private String token;
+	private Map<String,Object> user;
+
+	 public AuthResponse() {
+	    }
+	 
+	public AuthResponse(String token, Map<String, Object> user) {
+		super();
+		this.token = token;
+		this.user = user;
+	}
+	public String getToken() {
+		return token;
+	}
+	public void setToken(String token) {
+		this.token = token;
+	}
+	public Map<String, Object> getUser() {
+		return user;
+	}
+	public void setUser(Map<String, Object> user) {
+		this.user = user;
+	}
+	}
+
+
+//dto/LoginRequest.java
+
+package dto;
+
+public class LoginRequest {
+	private String email;
+	private String password;
+	
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+}
+
+//dto/RegisterRequest.java
+
+package dto;
+
+public class RegisterRequest {
+	private String username;
+	private String email;
+	private String password;
+	
+    public RegisterRequest() {}
+	
+	public String getUsername() {
+		return username;
+	}
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+}
+
+
+//model/User.java
+
+package model;
+
+import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+
+@Entity
+@Table(name="users")
+public class User {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	private Long id;
+	
+	@Column(nullable=false)
+	private String username;
+	
+	@Column(nullable=false,unique=true)
+	private String email;
+	
+	@Column(nullable=false)
+	private String password;
+	
+	@Column(name="created_at")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date createdAt;
+	
+	public User() {
+	}
+
+
+	public User(String username, String email, String password, Date createdAt) {
+		super();
+		this.username = username;
+		this.email = email;
+		this.password = password;
+		this.createdAt = createdAt;
+	}
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+}
+
+
+//repository/UserRepository.java
+
+package repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import model.User;
+
+public interface UserRepository extends JpaRepository<User, Long>{
+	Optional<User> findByEmail(String email);
+	boolean existByEmail(String email);
+}
+
+//security/JwtTokenProvider.java
+
+package security;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+
+@Component
+public class JwtTokenProvider {
+	@Value("${jwt.secret}")
+	private String jwtSecret;
+	@Value("${jwt.expiration}")
+	private long jwtExpiration;
+	
+	public String generateToken(String email) {
+		Map<String,Object> claims = new HashMap<>();
+		return createToken(claims,email);
+	}
+	private String createToken(Map<String, Object> claims, String subject) {
+	    long now = System.currentTimeMillis();
+	    return Jwts.builder()
+	            .setClaims(claims)
+	            .setSubject(subject)
+	            .setIssuedAt(new Date(now))
+	            .setExpiration(new Date(now + jwtExpiration * 1000))
+	            .signWith(SignatureAlgorithm.HS256, jwtSecret)
+	            .compact();
+	}
+	
+	 public String getEmailFromToken(String token) {
+	        return getClaimFromToken(token, Claims::getSubject);
+	    }
+
+	    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+	        final Claims claims = getAllClaimsFromToken(token);
+	        return claimsResolver.apply(claims);
+	    }
+
+	    private Claims getAllClaimsFromToken(String token) {
+	        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
+	    }
+
+	    public boolean validateToken(String token) {
+	        try {
+	            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+	            return true;
+	        } catch (Exception e) {
+	            return false;
+	        }
+	    }
+}
+
+
+//com.example.demo/SkillSwapApplication.java
+
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+
+@SpringBootApplication
+@EntityScan(basePackages = "model")
+public class SkillSwapApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SkillSwapApplication.class, args);
+	}
+
+}
+

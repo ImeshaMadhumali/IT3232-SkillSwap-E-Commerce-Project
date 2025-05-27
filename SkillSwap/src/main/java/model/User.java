@@ -19,7 +19,7 @@ public class User {
 	private Long id;
 	
 	@Column(nullable=false)
-	private String name;
+	private String username;
 	
 	@Column(nullable=false,unique=true)
 	private String email;
@@ -31,11 +31,13 @@ public class User {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date createdAt;
 	
-	
+	public User() {
+	}
 
-	public User(String name, String email, String password, Date createdAt) {
+
+	public User(String username, String email, String password, Date createdAt) {
 		super();
-		this.name = name;
+		this.username = username;
 		this.email = email;
 		this.password = password;
 		this.createdAt = createdAt;
@@ -48,12 +50,12 @@ public class User {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 	public String getEmail() {
