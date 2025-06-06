@@ -20,7 +20,7 @@ public class AuthController {
 	@PostMapping("/register")
 	 public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         try {
-            String result = authService.register(request);  // Fixed: lowercase 'a'
+            String result = authService.register(request);  
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
@@ -29,10 +29,14 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         try {
+        	//System.out.println("Email: " + request.getEmail());  // <--- Add this
+            //System.out.println("Password: " + request.getPassword());  // <--- Add this
             AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+        	 e.printStackTrace(); // Log full error
             return ResponseEntity.badRequest().body(null);
+            
         }
     }
 }

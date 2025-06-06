@@ -38,6 +38,8 @@ public class AuthService {
 
         userRepository.save(user);
         return "Registration successful!";
+        //System.out.println(" Saved user: " + user.getEmail());
+
     }
     
     public AuthResponse login(LoginRequest request) {
